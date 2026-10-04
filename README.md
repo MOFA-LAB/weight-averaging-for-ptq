@@ -15,19 +15,10 @@ python -m pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/
 python -m pip install -r requirements.txt
 ```
 
-## 2. Configuration
 
 
 
-| Stage | Fields to edit |
-| --- | --- |
-| Training | `project.output_dir`, `data.root`, `data.preparation.raw_dir`, `runtime.gpu_ids` |
-| Averaging | `input.stable_dir`, `output.source_run_dir`, `output.run_dir`, `runtime.gpu_id` |
-| GPTQ / AWQ | `source.pretrain_runs[*].path`, `project.output_dir`, both dataset `cache_dir` fields, `runtime.gpu_id` |
-
-
-
-## 3. Prepare data
+## 2. Prepare data
 
 Download and tokenize FineWeb-Edu into a shared 20B-token cache.
 
@@ -35,7 +26,7 @@ Download and tokenize FineWeb-Edu into a shared 20B-token cache.
 python launch.py --config configs/adamw_opt125m_2b.yaml --prepare-data-only
 ```
 
-## 4. Pretraining
+## 3. Pretraining
 
 Train OPT from scratch with a shared 1% warmup + 89% stable trajectory, followed by Stable and two cosine-decay continuations.
 
@@ -43,7 +34,7 @@ Train OPT from scratch with a shared 1% warmup + 89% stable trajectory, followed
 python launch.py --config configs/adamw_opt125m_2b.yaml
 ```
 
-## 5. Weight averaging
+## 4. Weight averaging
 
 After training, average the last 10 Stable checkpoints with LAWA, WMA, and LNWA.
 
@@ -51,7 +42,7 @@ After training, average the last 10 Stable checkpoints with LAWA, WMA, and LNWA.
 python tools/build_weighted_endpoints.py --config configs/opt125m_offline_averaging.yaml
 ```
 
-## 6. Post-training quantization
+## 5. Post-training quantization
 
 Prepare shared C4/RefinedWeb caches, then evaluate GPTQ and AWQ.
 
@@ -62,7 +53,7 @@ python PTQ/AWQ/launch.py --config PTQ/AWQ/configs/awq_opt125m_2b.yaml
 ```
 
 
-## 7. Other model sizes
+## 6. Other model sizes
 
 Replace `--config` with the matching file below; PTQ filenames use the `gptq_` or `awq_` prefix.
 
