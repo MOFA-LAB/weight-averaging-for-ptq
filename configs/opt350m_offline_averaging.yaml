@@ -1,0 +1,30 @@
+# Average the last 10 Stable checkpoints and evaluate each endpoint.
+input:
+  stable_dir: outputs/opt350m_4b/train/stable
+  checkpoint_glob: "step_*.pt"
+  M: 10
+  checkpoint_interval: 500
+  require_uniform_spacing: true
+
+output:
+  name: average_pt_opt350m_4b_averages
+  run_dir: outputs/opt350m_4b/averaging
+  overwrite: false
+  source_run_dir: outputs/opt350m_4b/train
+
+runtime:
+  device: cuda
+  gpu_id: 0
+  seed: 20260722
+  tf32: true
+  deterministic_algorithms: true
+
+evaluation:
+  validation: {num_blocks: 1024, micro_batch_size: 16, precision: bf16_mixed}
+  # Curvature is intentionally restricted to the OPT-125M experiments.
+  curvature: {enabled: false}
+
+methods:
+  lawa: {enabled: true}
+  wma: {enabled: true}
+  lnwa: {enabled: true, lag_penalties: [0.001, 0.002, 0.004, 0.006, 0.008, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0]}

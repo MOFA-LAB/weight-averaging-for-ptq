@@ -1,0 +1,35 @@
+# Average the last 10 Stable checkpoints and evaluate each endpoint.
+input:
+  stable_dir: outputs/opt125m_2b/train/stable
+  checkpoint_glob: "step_*.pt"
+  M: 10
+  checkpoint_interval: 500
+  require_uniform_spacing: true
+
+output:
+  name: average_pt_opt125m_2b_averages
+  run_dir: outputs/opt125m_2b/averaging
+  overwrite: false
+  source_run_dir: outputs/opt125m_2b/train
+
+runtime:
+  device: cuda
+  gpu_id: 1
+  seed: 20260722
+  tf32: true
+  deterministic_algorithms: true
+
+# Merging uses CPU memory; evaluation runs on the device above.
+evaluation:
+  validation: {num_blocks: 1024, micro_batch_size: 32, precision: bf16_mixed}
+  curvature: {enabled: true, batches: 4, micro_batch_size: 1, trace_probes: 8, lambda_max_iterations: 30, lambda_max_tolerance: 1.0e-3, seed: 20260810, precision: fp32}
+
+methods:
+  # LAWA is the lambda=0 endpoint of LNWA.
+  lawa: {enabled: true}
+
+  # Oldest:newest weights are 1:2:...:M.
+  wma: {enabled: true}
+
+  # min ||w||_2^2 + lambda (d^T w)^2, w>=0, sum(w)=1.
+  lnwa: {enabled: true, lag_penalties: [0.001, 0.002, 0.004, 0.006, 0.008, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.2, 0.4, 0.6, 0.8, 1.0]}

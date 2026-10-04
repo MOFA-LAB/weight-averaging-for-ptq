@@ -1,0 +1,23 @@
+model:
+  architecture: opt
+  # Official OPT-350M geometry. Its exact tied-weight count is ~331M.
+  expected_parameter_count: 331198464
+  vocab_size: 50272
+  hidden_size: 1024
+  ffn_dim: 4096
+  num_hidden_layers: 24
+  num_attention_heads: 16
+  max_position_embeddings: 2048
+  word_embed_proj_dim: 512
+  activation_function: relu
+  dropout: 0.1
+  attention_dropout: 0.0
+  activation_dropout: 0.0
+  layerdrop: 0.0
+  do_layer_norm_before: true
+  enable_bias: true
+  init_std: 0.02
+  bos_token_id: 2
+  eos_token_id: 2
+  pad_token_id: 1
+  gradient_checkpointing: true

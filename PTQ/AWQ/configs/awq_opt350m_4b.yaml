@@ -1,0 +1,64 @@
+project:
+  name: awq_opt350m_4b_5methods_refinedweb
+  output_dir: outputs/opt350m_4b/awq
+  seed: 20260722
+  resume: true
+
+source:
+  pretrain_runs:
+    - id: opt350m_4b_train
+      path: outputs/opt350m_4b/train
+      categories: [stable, decay]
+    - id: opt350m_4b_average
+      path: outputs/opt350m_4b/averaging
+      categories: [averaging]
+  selection:
+    # Any non-empty one-, two-, or three-category subset is valid.
+    include_categories: [stable, decay, averaging]
+    include_branches: all
+  exclude_endpoint_names: []
+
+calibration:
+  dataset_name: allenai/c4
+  dataset_config: en
+  split: train
+  revision: 1588ec454efa1a09f29cd18ddd04fe05fc8653a2
+  # Reuse the tokenizer from the training run.
+  cache_dir: data/ptq/c4
+  num_sequences: 128
+  sequence_length: 512
+  seed: 20260722
+  shuffle_buffer_size: 10000
+
+quantization:
+  algorithm: awq_reference_v1
+  # Choose any non-empty subset of the paper widths.
+  bits: [4, 3, 2]
+  group_size: 128
+  symmetric: false
+  zero_point: true
+  artifact_mode: fake_dequant
+  alpha_grid: [0.5]
+  clip_ratios: [0.8]
+  search_max_rows: 64
+  reconstruction_tokens: 32
+  row_chunk_size: 64
+  exclude_modules: [lm_head]
+  save_dequantized_state: false
+
+evaluation:
+  micro_batch_size: 2
+  refinedweb_heldout:
+    dataset_name: tiiuae/falcon-refinedweb
+    split: train
+    revision: c735840575b629292b41da8dde11dcd523d4f91c
+    text_field: content
+    shard_path: data/train-05533-of-05534-4b6b298e552e2f30.parquet
+    cache_dir: data/ptq/refinedweb
+
+runtime:
+  device: cuda
+  gpu_id: 0
+  precision: bf16
+  deterministic_algorithms: true
+  tf32: false

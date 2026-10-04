@@ -1,0 +1,9 @@
+torch==2.7.1
+numpy==1.26.4
+transformers==4.46.3
+tokenizers==0.20.3
+datasets==2.21.0
+huggingface-hub==0.36.2
+pyarrow==17.0.0
+PyYAML==6.0.2
+matplotlib==3.9.4

@@ -1,0 +1,60 @@
+project:
+  name: gptq_opt1p3b_20b_5methods_refinedweb
+  output_dir: outputs/opt1p3b_20b/gptq
+  seed: 20260722
+  resume: true
+
+source:
+  pretrain_runs:
+    - id: opt1p3b_20b_train
+      path: outputs/opt1p3b_20b/train
+      categories: [stable, decay]
+    - id: opt1p3b_20b_average
+      path: outputs/opt1p3b_20b/averaging
+      categories: [averaging]
+  selection:
+    # Select any non-empty subset of stable/decay/averaging.
+    include_categories: [stable, decay, averaging]
+    include_branches: all
+  exclude_endpoint_names: []
+
+calibration:
+  dataset_name: allenai/c4
+  dataset_config: en
+  split: train
+  revision: 1588ec454efa1a09f29cd18ddd04fe05fc8653a2
+  text_field: text
+  cache_dir: data/ptq/c4
+  num_sequences: 128
+  sequence_length: 512
+  seed: 20260722
+  shuffle_buffer_size: 10000
+  micro_batch_size: 1
+
+quantization:
+  algorithm: gptq_second_order_error_compensation_v1
+  bits: [4, 3, 2]
+  group_size: 128
+  damp_percent: 0.01
+  act_order: false
+  symmetric: true
+  column_block_size: 128
+  artifact_mode: fake_dequant
+  save_quantized_model: false
+
+evaluation:
+  micro_batch_size: 1
+  precision: bf16_mixed
+  refinedweb_heldout:
+    dataset_name: tiiuae/falcon-refinedweb
+    revision: c735840575b629292b41da8dde11dcd523d4f91c
+    split: train
+    text_field: content
+    shard_path: data/train-05533-of-05534-4b6b298e552e2f30.parquet
+    cache_dir: data/ptq/refinedweb
+
+runtime:
+  device: cuda
+  gpu_id: 0
+  tf32: false
+  deterministic_algorithms: true

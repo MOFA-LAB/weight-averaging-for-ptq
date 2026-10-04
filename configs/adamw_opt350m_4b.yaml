@@ -1,0 +1,76 @@
+project:
+  name: average_pt_opt350m_4b
+  output_dir: outputs/opt350m_4b/train
+  seed: 20260722
+  resume: true
+
+initialization:
+  mode: scratch
+
+runtime:
+  device: cuda
+  gpu_ids: [0, 1, 2, 3]
+
+model_config: model_opt350m.yaml
+
+data:
+  root: data/fineweb_edu/tokenized_20b
+  manifest: tokenization_manifest.json
+  train_file: train_tokens.int32.bin
+  validation_file: validation_tokens.int32.bin
+  storage_dtype: int32
+  tokenizer_vocab_size: 50265
+  preparation:
+    prepare_on_launch: true
+    mode: fineweb_edu_local_snapshot
+    raw_dir: data/fineweb_edu/raw/sample/100BT
+    minimum_train_tokens: 20000000000
+    validation_tokens: 2000000
+    dataset_revision: fc9850dff5e2d0f8f776efe41b24a1c49556cfc5
+    tokenizer_assets_dir: scripts/opt_125m_tokenizer
+
+training:
+  sequence_length: 512
+  epochs: 1.0
+  train_token_budget: 4000000000
+  # Global batch: 4 GPUs x 128 sequences x 1 accumulation.
+  micro_batch_size_per_gpu: 128
+  gradient_accumulation_steps: 1
+  expected_world_size: 4
+  precision: bf16_mixed
+  max_grad_norm: 0.5
+  warmup_ratio: 0.01
+  stable_ratio: 0.89
+  decay_ratio: 0.10
+  log_interval: 50
+  recovery_checkpoint_interval: 1000
+  deterministic_algorithms: true
+  tf32: true
+
+optimizer:
+  name: adamw
+  learning_rate: 1.0e-3
+  betas: [0.9, 0.95]
+  eps: 1.0e-8
+  weight_decay: 0.1
+
+post_fork:
+  selected_branches: all
+  checkpoint_snapshots: {interval: 500, keep_last: 10}
+  stable:
+    schedule: constant
+  decay:
+    branches:
+      - {name: stable10_decay10_to_1pct, schedule: stable_then_cosine_decay, stable_ratio_after_fork: 0.0, decay_ratio: 0.10, final_lr_ratio: 0.01}
+      - {name: stable10_decay10_to_zero, schedule: stable_then_cosine_decay, stable_ratio_after_fork: 0.0, decay_ratio: 0.10, final_lr_ratio: 0.0}
+
+evaluation:
+  validation: {num_blocks: 1024, micro_batch_size: 32, precision: bf16_mixed}
+  trajectory:
+    interval: 1000
+    include_fork: false
+    include_final: true
+    curvature: {enabled: false}
+  final:
+    output_directory: final_evaluation
+    curvature: {enabled: false}
